@@ -26,7 +26,7 @@ def get_entities(p_entity, p_depth, p_limit):
             'article_title': record.pop('article_title'),
             'score': record.pop('score'),
             'score_1': record.pop('score_1'),
-            'snippet': record.pop('snippet')
+            #'snippet': record.pop('snippet')
         }
 
         #print(record)
@@ -40,10 +40,9 @@ def get_entities(p_entity, p_depth, p_limit):
 
 st.set_page_config(layout="wide")
 
-json_list = get_entities('BRCA1', 2, 10)
+json_list = get_entities('BRCA1', 2, 20)
 #print(json_list)
-st.write(json_list)
-
+#st.write(json_list)
 
 # ======================================================
 # MOCK KNOWLEDGE GRAPH (paper = evidence)
@@ -64,7 +63,7 @@ if "path" not in st.session_state:
 # SIDEBAR FILTERS
 # ======================================================
 st.sidebar.header("Filters")
-year_filter = st.sidebar.slider("Minimum publication year", 1990, 2026, 2015)
+year_filter = st.sidebar.slider("Minimum publication year", 1868, 2026, 1930)
 sort_by = st.sidebar.selectbox("Sort papers by", ["year", "score"])
 
 # ======================================================
@@ -97,7 +96,8 @@ def add_edge(entry):
                 "pmid": paper["pmid"],
                 "year": paper["year"],
                 "score": paper["score"],
-                "snippet": paper["snippet"],
+                #"snippet": paper["snippet"],
+                "article_title": paper["article_title"],
             }
         }
     )
@@ -105,8 +105,8 @@ def add_edge(entry):
 def build_graph():
     st.session_state.elements = {"nodes": [], "edges": []}
 
-    filtered = [e for e in MOCK_GRAPH if e.get("paper") and e["paper"].get("year") and e["paper"]["year"] >= year_filter]
-    filtered = sorted(filtered, key=lambda x: x["paper"][sort_by], reverse=True)
+    filtered = [e for e in MOCK_GRAPH if e["paper"]["year"] is not None and e["paper"]["year"] >= year_filter]
+    filtered = sorted(filtered, key=lambda x: x["paper"][sort_by] if x["paper"][sort_by] is not None else -1, reverse=True)
 
     for entry in filtered:
         add_node(entry["source"], entry["source_type"])
@@ -129,10 +129,12 @@ node_styles = [
 ]
 
 edge_styles = [
+    EdgeStyle("REGULATES", caption="label", directed=False),
+    EdgeStyle("INTERACTS", caption="label", directed=False),
     EdgeStyle("ASSOCIATED_WITH", caption="label", directed=False),
-    EdgeStyle("INVOLVED_IN", caption="label", directed=False),
-    EdgeStyle("TARGETED_BY", caption="label", directed=False),
-    EdgeStyle("TREATED_WITH", caption="label", directed=False),
+    EdgeStyle("INVOLVES", caption="label", directed=False),
+    EdgeStyle("MODULATES", caption="label", directed=False),
+    EdgeStyle("TREATS", caption="label", directed=False),
 ]
 
 edge_styles.append(
@@ -170,48 +172,38 @@ selected = st_link_analysis(
 # ======================================================
 # INTERACTIONS
 # ======================================================
-if selected:
+if selected:  # This check prevents the 'NoneType' error
+    
+    # ---------------- EDGE (PAPER) CLICK ----------------
+    if selected.get("type") == "edge":
+        data = selected["data"]
 
-    # ---------------- PAPER CLICK ----------------
-   
-   if selected["type"] == "edge":
-    data = selected["data"]
+        # Update sidebar with edge details
+        st.sidebar.markdown(f"### 🔗 Connection Details")
+        st.sidebar.markdown(f"""
+        **Relation:** {data.get('label', 'N/A')}  
+        **From:** {data['source']}  
+        **To:** {data['target']}  
 
-    # Highlight logic
-    for edge in st.session_state.elements["edges"]:
-        edge["data"]["label"] = (
-            "highlight" if edge["data"]["pmid"] == data["pmid"] else "default"
-        )
-
-    # ===== CLEAN SIDEBAR =====
-    st.sidebar.markdown(f"### 🔗 {selected['data']['label']}")
-
-    st.sidebar.markdown(f"""
-    **From:** {data['source']}  
-    **To:** {data['target']}  
-
-    **PMID:** {data['pmid']}  
-    **Year:** {data['year']}  
-    **Confidence:** {data['score']}
-    """)
-
-    st.sidebar.markdown("**Supporting Evidence:**")
-    st.sidebar.info(data["snippet"])
+        **PMID:** {data['pmid']}  
+        **Year:** {data['year']}  
+        **Confidence:** {data['score']}
+        **Title:** {data.get('article_title', 'N/A')}
+        """)
 
     # ---------------- NODE CLICK ----------------
-
-elif selected["type"] == "node":
+    elif selected.get("type") == "node":
         node_id = selected["data"]["id"]
+        node_label = selected["data"]["label"]
 
-        for edge in st.session_state.elements["edges"]:
-            edge["data"]["edge_type"] = "default"
-
-        st.sidebar.markdown("### 🔹 Node")
+        st.sidebar.markdown("### 🔹 Node Details")
         st.sidebar.write(f"**Name:** {node_id}")
-        st.sidebar.write(f"**Type:** {selected['data']['label']}")
+        st.sidebar.write(f"**Type:** {node_label}")
 
+        # Add to path if not already there
         if node_id not in st.session_state.path:
             st.session_state.path.append(node_id)
+            # Optional: st.rerun() if you want the path to update immediately
 
 # ======================================================
 # PATH
