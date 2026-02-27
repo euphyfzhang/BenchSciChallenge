@@ -1,0 +1,8 @@
+networkx
+matplotlib
+graphviz
+streamlit
+st-link-analysis
+google-cloud-bigquery
+bigframes
+pandas

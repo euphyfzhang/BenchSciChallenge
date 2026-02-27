@@ -46,6 +46,36 @@ PubMed contains millions of biomedical papers, but discovering meaningful relati
 
 ---
 
+### Prerequistes
+- Download Google Cloud SDK for authentication: https://cloud.google.com/sdk/docs/install
+
+for authentication
+```
+gcloud auth application-default login 
+```
+
+for checking the gcloud project list
+```
+gcloud projects list 
+```
+
+download all the python packages from the requirements.txt
+```
+pip install -r requirements.txt
+```
+
+---
+
+### Local Deployment
+```
+streamlit run c:/Users/Euphemia/Desktop/Git/BenchSciChallenge/interative_graph_v1.py
+```
+
+### Deployment to gcloud
+```
+.\deploy.ps1
+```
+
 ### Future Improvements
 - Multi-hop expansion controls
 - Integration with the STRING database for protein–protein interaction evidence

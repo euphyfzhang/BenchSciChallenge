@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!gcloud_auth.py
+!interative_graph_v1.Py
+!requirements.txt
