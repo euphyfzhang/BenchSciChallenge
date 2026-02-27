@@ -8,16 +8,6 @@ import json
 
 st.set_page_config(layout="wide")
 
-json_list = gcloud_auth.get_entities('BRCA1', 2, 20)
-#print(json_list)
-#st.write(json_list)
-
-# ======================================================
-# MOCK KNOWLEDGE GRAPH (paper = evidence)
-# ======================================================
-
-MOCK_GRAPH = json_list
-
 # ======================================================
 # SESSION STATE
 # ======================================================
@@ -70,10 +60,11 @@ def add_edge(entry):
         }
     )
 
-def build_graph():
+def build_graph(p_array):
+    
     st.session_state.elements = {"nodes": [], "edges": []}
 
-    filtered = [e for e in MOCK_GRAPH if e["paper"]["year"] is not None and e["paper"]["year"] >= year_filter]
+    filtered = [e for e in p_array if e["paper"]["year"] is not None and e["paper"]["year"] >= year_filter]
     filtered = sorted(filtered, key=lambda x: x["paper"][sort_by] if x["paper"][sort_by] is not None else -1, reverse=True)
 
     for entry in filtered:
@@ -84,7 +75,8 @@ def build_graph():
 # ======================================================
 # BUILD GRAPH
 # ======================================================
-build_graph()
+
+
 
 # ======================================================
 # STYLES
@@ -113,8 +105,17 @@ edge_styles.append(
 # UI
 # ======================================================
 st.title("🔬 Evidence-First Biomedical Knowledge Explorer")
-query = st.text_input("Search for gene, disease, drug, or pathway")
 
+## user input
+user_input = st.text_input("Search from the database")
+
+## retrieve user input to conduct searching
+json_list = gcloud_auth.get_entities(user_input, 2, 20)
+
+## build graph
+build_graph(json_list)
+
+query = st.text_input("Search in the graph")
 # ======================================================
 # SEARCH → highlight connected edges
 # ======================================================
